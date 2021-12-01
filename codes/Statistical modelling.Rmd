@@ -1,0 +1,146 @@
+---
+title: "statistical modeling"
+output: word_document
+---
+```{r}
+#setwd('../preprocessed_data')
+```
+
+CCNY year comparison
+
+```{r}
+library(feather)
+library(tidyverse)
+filepath = "../preprocessed_data/ccny.csv"
+pm_ccny <- read.csv(filepath,header=T)
+pm_ccny$year = factor(pm_ccny$year)
+pm_ccny$date = as.Date(pm_ccny$date)
+pm_ccny$day = as.Date(pm_ccny$day, format='%m-%d')
+
+col_filter = c('time', 'date', 'pm', 'day', 'year')
+pm_ccny %>% 
+  filter(year == 2020) %>% 
+  select(col_filter) -> pm_ccny2020
+
+pm_ccny %>% 
+  filter(year == 2019) %>% 
+  select(col_filter) -> pm_ccny2019
+
+```
+```{r}
+### check linear relations assumption
+plot(pm_ccny$time,pm_ccny$pm, col=pm_ccny$year)
+pairs(pm_ccny)
+```
+```{r}
+### check equal variance assumption
+var.test(pm ~ year, data=pm_ccny, 
+         alternative = "two.sided")
+```
+
+
+```{r}
+#test whether COVID-19 has an influence on PM2.5
+###CCNY
+amodel <- lm(pm ~ time+year, data=pm_ccny)
+imodel = lm(pm~(time+year)^2,data=pm_ccny)
+anova(amodel, imodel)
+summary(imodel)
+imodel$coef[c(1,2)] + imodel$coef[c(3,4)]
+```
+
+
+```{r}
+plot(imodel)
+```
+The response(PM2.5) is right-skewed from QQ-plot, try a log transformation instead!
+
+```{r}
+#plot(pm_ccny$day,log(pm_ccny$pm), col=pm_ccny$year)
+amodel <- lm(log(pm) ~ time+year, data=pm_ccny)
+imodel = lm(log(pm)~(time+year)^2,data=pm_ccny)
+anova(amodel, imodel)
+##choose interaction model!
+summary(imodel)
+###2020 intercept and slope
+imodel$coef[c(1,2)] + imodel$coef[c(3,4)]
+```
+```{r}
+###check diagnostic plots after log transformation!
+plot(imodel)
+```
+```{r}
+### check respective R square for transformed models
+model2020 <- lm(log(pm) ~ time, data=pm_ccny2020)
+summary(model2020)
+model2019 <- lm(log(pm) ~ time, data=pm_ccny2019)
+summary(model2019)
+```
+IS143 
+
+```{r}
+filepath = "../preprocessed_data/is.csv"
+pm_is <- read.csv(filepath,header=T)
+pm_is$year = factor(pm_is$year)
+pm_is$date = as.Date(pm_is$date)
+pm_is$day = as.Date(pm_is$day, format='%m-%d')
+
+col_filter = c('time', 'date', 'pm', 'day', 'year')
+pm_is %>% 
+  filter(year == 2020) %>% 
+  select(col_filter) -> pm_is2020
+
+pm_is %>% 
+  filter(year == 2019) %>% 
+  select(col_filter) -> pm_is2019
+
+```
+
+```{r}
+#test whether COVID-19 has an influence on PM2.5
+###IS143
+amodel <- lm(pm ~ time+year, data=pm_is)
+imodel = lm(pm~(time+year)^2,data=pm_is)
+anova(amodel, imodel)
+summary(imodel)
+imodel$coef[c(1,2)] + imodel$coef[c(3,4)]
+###check diagnostic plots
+plot(amodel)
+```
+Apply a log transformation too!
+```{r}
+amodel <- lm(log(pm) ~ time+year, data=pm_is)
+imodel = lm(log(pm)~(time+year)^2,data=pm_is)
+anova(amodel, imodel)
+##choose interaction model!
+summary(imodel)
+###2020 intercept and slope
+imodel$coef[c(1,2)] + imodel$coef[c(3,4)]
+plot(amodel)
+```
+
+Test whether peak time, weekdays and year would have interaction for yellow taxi trips.
+```{r}
+filepath = "../preprocessed_data/yellow_time.csv"
+yellow <- read.csv(filepath,header=T)
+yellow$PEAK = factor(yellow$PEAK)
+yellow$WD = factor(yellow$WD)
+yellow$year = factor(yellow$year)
+yellow %>% head
+```
+```{r}
+amodel = lm(trip_duration~WD+year, data=yellow)
+#summary(amodel)
+imodel = lm(trip_duration~WD*year, data=yellow)
+summary(imodel)
+anova(amodel, imodel)
+```
+```{r}
+amodel = lm(trip_duration~PEAK+year, data=yellow)
+#summary(amodel)
+imodel = lm(trip_duration~PEAK*year, data=yellow)
+summary(imodel)
+anova(amodel,imodel)
+```
+
+
