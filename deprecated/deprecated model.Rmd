@@ -1,0 +1,45 @@
+---
+title: "Deprecated"
+output: word_document
+---
+
+Test whether peak time, weekdays and year would have interaction for yellow taxi trips.
+```{r}
+filepath = "../preprocessed_data/yellow_time.csv"
+yellow <- read.csv(filepath,header=T)
+yellow$PEAK = factor(yellow$PEAK)
+yellow$WD = factor(yellow$WD)
+yellow$year = factor(yellow$year)
+yellow %>% head
+```
+
+```{r}
+amodel = lm(trip_distance~WD+year, data=yellow)
+#summary(amodel)
+imodel = lm(trip_distance~WD*year, data=yellow)
+summary(imodel)
+anova(amodel, imodel)
+```
+```{r}
+amodel = lm(trip_distance~PEAK+year, data=yellow)
+#summary(amodel)
+imodel = lm(trip_distance~PEAK*year, data=yellow)
+summary(imodel)
+anova(amodel, imodel)
+```
+
+Fit a regression model with response PM2.5
+```{r}
+filepath = "../preprocessed_data/daily_ccny.csv"
+ccny <- read.csv(filepath,header=T)
+ccny %>% head
+```
+```{r}
+m1 = lm(pm~ydistance+ycount+hcount+yduration+hduration+yspeed+year, data=ccny)
+summary(m1)
+```
+```{r}
+m2 = step(m1, pm=ydistance+ycount+hcount+yduration+hduration+yspeed+year,data=ccny)
+summary(m2)
+```
+
